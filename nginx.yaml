@@ -1,0 +1,54 @@
+---                                                                                                                                                                                                             
+apiVersion: apps/v1
+kind: Deployment
+metadata:                                                                                                                                                                                                       
+  name: nginx-stack
+  namespace: test
+spec:                                                                                                                                                                                                           
+  selector:                                                                                                                                                                                                     
+    matchLabels:                                                                                                                                                                                                
+      app: nginx-stack
+  replicas: 3                                                                                                                                                                                                   
+  template:                                                                                                                                                                                                     
+    metadata:                                                                                                                                                                                                   
+      labels:                                                                                                                                                                                                   
+        app: nginx-stack
+    spec:                                                                                                                                                                                                       
+      containers:                                                                                                                                                                                               
+      - name: nginx-stack
+        image: nginxinc/nginx-unprivileged
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-svc
+  namespace: test
+spec:
+  selector:
+    app: nginx-stack
+    deployment: nginx-stack
+  ports:
+  - name: nginx-https
+    port: 8443
+    targetPort: 8443
+    protocol: TCP
+status:
+  loadBalancer: {}
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: nginx-route
+  namespace: test
+spec:
+  host: nginx-stack.sapura.com.my
+  to:
+    kind: Service
+    name: nginx-svc
+    weight: 100
+  port:
+    targetPort: https
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+  wildcardPolicy: None
